@@ -19,7 +19,7 @@ ESP8266 Huzzah.
 
 
 ### Motivation
-<img src="./images/everspring.jpg" width="222px" style="float:right;margin:15px;">
+<img src="./images/everspring.jpg" width="222px" class="float-right m-3" style="float:right;margin:15px">
 I own two <a href="http://a.co/4hNYmYY ">Everspring Z-Wave Wireless Temperature
 and Humidity sensors</a>. Apparently they are no longer being made. At least I
 couldn't find any for sale, so I decided to build something similar myself. The
