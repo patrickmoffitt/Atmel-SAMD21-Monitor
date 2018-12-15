@@ -157,6 +157,9 @@ those fluctuations.
 The ATWINC1500 does this auto-magically. All you have to do is
 <a  href="https://learn.adafruit.com/adafruit-feather-m0-wifi-atwinc1500?view=all#updating-ssl-certificates">load up the SSL certificates</a>.
 
+### ATWIN1500 WiFi Module LEDs
+In order to save battery I have disabled the green and yellow LEDs on the WiFi module. This is done in `lib/WiFi101/src/bsp/include/nm_bsp_internal.h` by preventing `CONF_PERIPH` from being defined. If you'd rather have those blinking lights I suggest you remove `lib/WiFi101` and load `<WiFi101.h>` (the Arduino version) in `main.cpp` instead.
+
 Bugs, Issues and Pull Requests
 ------------------------------
 If you find a bug please create an issue. If you'd like to contribute please
