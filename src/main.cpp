@@ -24,7 +24,7 @@
 #include <cmath>
 #include <locale>
 #include <Arduino.h>
-#include <WiFi101.h>
+#include "../lib/WiFi101/src/WiFi101.h"
 #include <avr/dtostrf.h>
 #include "monitor_data.hpp"
 #include "ntp_time_utils.hpp"
@@ -35,7 +35,6 @@
 #include "monitor_read_battery.hpp"
 #include "wifi101_helper.hpp"
 #include <RTCZero.h>
-
 
 #define LOOP_LIMIT 6
 
