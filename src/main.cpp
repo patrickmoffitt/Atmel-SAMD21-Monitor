@@ -25,7 +25,6 @@
 #include <locale>
 #include <Arduino.h>
 #include "../lib/WiFi101/src/WiFi101.h"
-#include <avr/dtostrf.h>
 #include "monitor_data.hpp"
 #include "ntp_time_utils.hpp"
 #include "ADAFRUIT_IO_MQTT.hpp"
@@ -34,11 +33,15 @@
 #include "monitor_current_sensor.hpp"
 #include "monitor_read_battery.hpp"
 #include "wifi101_helper.hpp"
+#include "float_to_fixed_width.hpp"
 #include <RTCZero.h>
 
 #define LOOP_LIMIT 6
 
 #define SLEEP_INTERVAL_SECONDS 900
+
+// Float format helper.
+using format = float_to_fixed_width;
 
 // struct to hold sensor measurements.
 monitor_data sensor;
@@ -135,8 +138,9 @@ void loop() {
         Serial.print("NTP: "); Serial.println(time_util.unix_epoch_time_gmt);
         Serial.print("Sensor Time: "); Serial.println(sensor.unix_epoch_time);
 
-        if (mqtt_connect_status != 0) {
-            mqtt_connect_status = mqtt.connect();
+        if (not mqtt.connected()) {
+            mqtt.connect();
+            delay(100);
         }
 
         sensor.battery_vdc = get_battery_vdc();
@@ -173,24 +177,24 @@ void loop() {
         char payload_float[AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE];  // Float max 39 digits and minus sign.
         char zero{'\0'};
         std::bitset<5> publish_status{0};
-        if (mqtt_connect_status == 0) {
+        if (mqtt.connected()) {
             // Publish Battery VDC Percent
-            dtostrf(sensor.battery_vdc, 0, AIO_FLOAT_PRECISION, payload_float);
+            format::to_fixed_width(sensor.battery_vdc, ZERO_FIELD_PAD, payload_float);
             publish_status[0] = mqtt.publish(BATTERY_VDC, payload_float, 0);
             memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
             // Publish Current mA
-            dtostrf(sensor.current_ma, 0, AIO_FLOAT_PRECISION, payload_float);
+            format::to_fixed_width(sensor.current_ma, ZERO_FIELD_PAD, AIO_FLOAT_PRECISION, payload_float);
             publish_status[1] = mqtt.publish(CURRENT_MA, payload_float, 0);
             memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
             // Publish Humidity ϕ
-            dtostrf(sensor.humidity_rh, 0, AIO_FLOAT_PRECISION, payload_float);
+            format::to_fixed_width(sensor.humidity_rh, ZERO_FIELD_PAD, AIO_FLOAT_PRECISION, payload_float);
             publish_status[2] = mqtt.publish(HUMIDITY_RH, payload_float, 0);
             memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
             // Publish Temperature ℉
-            dtostrf(sensor.temperature_f, 0, AIO_FLOAT_PRECISION, payload_float);
+            format::to_fixed_width(sensor.temperature_f, ZERO_FIELD_PAD, AIO_FLOAT_PRECISION, payload_float);
             publish_status[3] = mqtt.publish(TEMPERATURE_F, payload_float, 0);
             memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
@@ -248,14 +252,17 @@ void alarm_handler() {
 void monitor_deep_sleep() {
     pinMode(PIN_LED_13, LOW);
     oled.disable();
-    mqtt.disconnect();
+    if (mqtt.connected()) {
+        mqtt.disconnect();
+    }
     mqtt_connect_status = -1;
     client.stop();
     WiFi.end();
-
+    
+    auto alarm_time = time_util.unix_epoch_time_gmt + SLEEP_INTERVAL_SECONDS;
     Serial.print("RTC Epoch: "); Serial.println(rtc.getEpoch());
-    Serial.print("RTC Alarm: "); Serial.println(time_util.unix_epoch_time_gmt + SLEEP_INTERVAL_SECONDS);
-    rtc.setAlarmEpoch((uint32)time_util.unix_epoch_time_gmt + SLEEP_INTERVAL_SECONDS);
+    Serial.print("RTC Alarm: "); Serial.println(alarm_time);
+    rtc.setAlarmEpoch((uint32) alarm_time);
     rtc.enableAlarm(rtc.MATCH_HHMMSS);
     rtc.standbyMode();
 }
