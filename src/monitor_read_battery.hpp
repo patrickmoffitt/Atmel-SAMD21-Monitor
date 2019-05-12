@@ -32,6 +32,16 @@
 #include <algorithm>
 #include "serial_debug_error.hpp"
 
+
+// Analog read level is 10 bit 0-1023 (0V-1V).
+// our 10MΩ & 2.2MΩ voltage divider takes the max
+// lipo value of 4.565V and drops it to 823.
+// this means our min analog read value should be 632 (3.505V).
+// These are real, calibration, values as measured on the device.
+
+#define MIN_BATTERY_RAW_ADC 632
+#define MAX_BATTERY_RAW_ADC 823
+
 int get_battery_vdc();
 
 #endif //MONITOR_MONITOR_READ_BATTERY_HPP

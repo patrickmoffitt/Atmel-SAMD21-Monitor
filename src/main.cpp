@@ -141,7 +141,7 @@ void loop() {
 
         sensor.battery_vdc = get_battery_vdc();
         sensor.current_ma = ina219.getCurrent_mA();
-        if (std::isnan(sensor.current_ma) or sensor.current_ma < 0) {
+        if (std::isnan(sensor.current_ma)) {
             DEBUG_PRINTLN("Error reading current sensor!");
         } else {
             DEBUG_PRINT("Current : ");
@@ -227,7 +227,7 @@ void loop() {
         uint8_t mac_address;
         WiFi.macAddress(&mac_address);
         DEBUG_PRINTLN("WiFi is not connected.");
-        DEBUG_PRINT("MAC Address: "); DEBUG_PRINTLN(macv4_int_to_str(mac_address));
+        DEBUG_PRINT("MAC Address: "); DEBUG_PRINTLN(macv4_int_to_str(&mac_address));
         wifi_connection_attempts++;
         DEBUG_PRINT("Connection attempt #");
         DEBUG_PRINT(wifi_connection_attempts);

@@ -24,26 +24,21 @@
 
 int get_battery_vdc() {
     // Read the battery level from the Feather M0 analog in pin.
-    // Analog read level is 10 bit 0-1023 (0V-1V).
-    // our 10MΩ & 2.2MΩ voltage divider takes the max
-    // lipo value of 4.2V and drops it to 0.757V max.
-    // this means our min analog read value should be 566 (3.14V)
-    // and the max analog read value should be 757 (4.2V).
     const size_t readings_len{30};
     std::array<int, readings_len> readings;
     std::fill_n(begin(readings), readings_len, 0);
     analogReadResolution(10);
     analogReference(AR_INTERNAL1V0);
     for (int i=0; i < (int) readings_len; i++) {
-        readings[i] = lround(analogRead(ADC_PIN) * 0.97656);
+        readings[i] = analogRead(ADC_PIN);
         delay(33);
     }
     int sum = accumulate(begin(readings), end(readings), 0, std::plus<int>());
     int level = sum / readings_len;
     DEBUG_PRINT("Raw ADC value: ");
     DEBUG_PRINTLN(level);
-    // convert battery level to percent
-    level = map(level, 566, 757, 0, 100);
+    // Convert battery level to percent.
+    level = map(level, MIN_BATTERY_RAW_ADC, MAX_BATTERY_RAW_ADC, 0, 100);
     DEBUG_PRINT("Battery level: ");
     DEBUG_PRINT(level);
     DEBUG_PRINTLN("%");
