@@ -139,7 +139,7 @@ void loop() {
             delay(100);
         }
 
-        sensor.battery_vdc = get_battery_vdc();
+        sensor.battery_vdc = get_battery_percent();
         sensor.current_ma = ina219.getCurrent_mA();
         if (std::isnan(sensor.current_ma)) {
             DEBUG_PRINTLN("Error reading current sensor!");

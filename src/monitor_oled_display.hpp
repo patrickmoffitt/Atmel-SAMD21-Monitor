@@ -33,6 +33,7 @@
 #undef max  // @ToDo remove when library? bug fixed.
 #include <algorithm>
 #include "monitor_data.hpp"
+#include "monitor_read_battery.hpp"
 
 #define BUTTON_A 9
 #define BUTTON_B 6

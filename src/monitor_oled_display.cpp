@@ -85,13 +85,12 @@ void monitor_display::show_page(int page) {
         }
         case 1 : {
             float voltage;
-            voltage = map(sensor.battery_vdc, 0, 100, 3.14, 4.20);
-            if (voltage >= 3.15) {
-                oled_wifi.setBattery(voltage);
-                oled_wifi.setBatteryVisible(true);
-                oled_wifi.setBatteryIcon(true);
-                oled_wifi.renderBattery();
-            }
+            voltage = get_battery_vdc();
+            oled_wifi.setBattery(voltage);
+            oled_wifi.setBatteryVisible(true);
+            oled_wifi.setBatteryIcon(true);
+            oled_wifi.renderBattery();
+
 
             if (WiFi.status() == WL_CONNECTED){
                 oled_wifi.setConnected(true);
