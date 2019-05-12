@@ -35,3 +35,15 @@ String ipv4_int_to_str(const uint32_t ip) {
     str_buf << (int) bytes[3] << std::ends;
     return String(str_buf.str().c_str());
 }
+
+String macv4_int_to_str(const uint8_t *mac) {
+    std::stringstream str_buf;
+    int i{0};
+    for(i = 5; i >= 0; i--) {
+        str_buf << std::hex << std::setw(2) << std::setfill('0') << (int) mac[i];
+        if (i > 0)
+            str_buf << ':';
+    }
+    str_buf << std::ends;
+    return String(str_buf.str().c_str());
+}

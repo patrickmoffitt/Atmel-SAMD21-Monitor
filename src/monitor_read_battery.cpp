@@ -40,12 +40,12 @@ int get_battery_vdc() {
     }
     int sum = accumulate(begin(readings), end(readings), 0, std::plus<int>());
     int level = sum / readings_len;
-    Serial.print("Raw ADC value: ");
-    Serial.println(level);
+    DEBUG_PRINT("Raw ADC value: ");
+    DEBUG_PRINTLN(level);
     // convert battery level to percent
     level = map(level, 566, 757, 0, 100);
-    Serial.print("Battery level: ");
-    Serial.print(level);
-    Serial.println("%");
+    DEBUG_PRINT("Battery level: ");
+    DEBUG_PRINT(level);
+    DEBUG_PRINTLN("%");
     return level;
 }

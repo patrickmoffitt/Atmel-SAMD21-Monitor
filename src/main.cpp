@@ -34,6 +34,7 @@
 #include "monitor_read_battery.hpp"
 #include "wifi101_helper.hpp"
 #include "float_to_fixed_width.hpp"
+#include "serial_debug_error.hpp"
 #include <RTCZero.h>
 
 #define LOOP_LIMIT 6
@@ -74,7 +75,6 @@ Adafruit_INA219 ina219;
 volatile bool display_data{false};  // Button A toggles the display
 volatile bool degrees_c_f{false};   // Button C toggles the temperature scale.
 volatile bool system_time_set{false};
-volatile int8_t mqtt_connect_status{-1};
 volatile int loop_counter{1};
 
 void alarm_handler();  // Advance declaration
@@ -85,8 +85,9 @@ void monitor_deep_sleep();  //  Advance declaration.
 int wifi_connection_attempts{0};
 
 void setup() {
+#if defined(SERIAL_DEBUG) || defined(SERIAL_ERROR)
     Serial.begin(115200);
-    // Serial.setDebugOutput(true);
+#endif
     rtc.begin();
     rtc.attachInterrupt(alarm_handler);
     pinMode(PIN_LED_13, LOW);
@@ -115,11 +116,6 @@ void setup() {
     WiFi.setPins(8, 7, 4, 2);
     WiFi.maxLowPowerMode();
     WiFi.begin(WIFI_SSID, WIFI_PASS);
-    /*
-    while (!Serial) {
-        delay(33);  // Do not exit setup until Serial has success.
-    }
-     */
 }
 
 void loop() {
@@ -131,12 +127,12 @@ void loop() {
     }
 
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println(ipv4_int_to_str(WiFi.localIP()));
+        DEBUG_PRINTLN(ipv4_int_to_str(WiFi.localIP()));
 
         time_util.set_time_of_day();
 
-        Serial.print("NTP: "); Serial.println(time_util.unix_epoch_time_gmt);
-        Serial.print("Sensor Time: "); Serial.println(sensor.unix_epoch_time);
+        DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(time_util.unix_epoch_time_gmt);
+        DEBUG_PRINT("Sensor Time: "); DEBUG_PRINTLN(sensor.unix_epoch_time);
 
         if (not mqtt.connected()) {
             mqtt.connect();
@@ -146,32 +142,32 @@ void loop() {
         sensor.battery_vdc = get_battery_vdc();
         sensor.current_ma = ina219.getCurrent_mA();
         if (std::isnan(sensor.current_ma) or sensor.current_ma < 0) {
-            Serial.println("Error reading current sensor!");
+            DEBUG_PRINTLN("Error reading current sensor!");
         } else {
-            Serial.print("Current : ");
-            Serial.print(sensor.current_ma);
-            Serial.println("mA");
+            DEBUG_PRINT("Current : ");
+            DEBUG_PRINT(sensor.current_ma);
+            DEBUG_PRINTLN("mA");
         }
 
         sensors_event_t event;
         dht.temperature().getEvent(&event);
         if (std::isnan(event.temperature)) {
-            Serial.println("Error reading temperature!");
+            DEBUG_PRINTLN("Error reading temperature!");
         } else {
             sensor.temperature_f = event.temperature * 1.8 + 32;
-            Serial.print("Temperature: ");
-            Serial.print(sensor.temperature_f);
-            Serial.println(" ℉");
+            DEBUG_PRINT("Temperature: ");
+            DEBUG_PRINT(sensor.temperature_f);
+            DEBUG_PRINTLN(" ℉");
         };
 
         dht.humidity().getEvent(&event);
         if (std::isnan(event.relative_humidity)) {
-            Serial.println("Error reading humidity!");
+            DEBUG_PRINTLN("Error reading humidity!");
         } else {
             sensor.humidity_rh = event.relative_humidity;
-            Serial.print("Relative Humidity: ");
-            Serial.print(sensor.humidity_rh);
-            Serial.println(" ϕ");
+            DEBUG_PRINT("Relative Humidity: ");
+            DEBUG_PRINT(sensor.humidity_rh);
+            DEBUG_PRINTLN(" ϕ");
         }
 
         char payload_float[AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE];  // Float max 39 digits and minus sign.
@@ -202,41 +198,40 @@ void loop() {
             publish_status[4] = mqtt.publish(UNIX_EPOCH_TIME, sensor.unix_epoch_time, 0);
         }
 
-        Serial.print("Loop "); Serial.print(loop_counter); Serial.print(" of ");
-        Serial.println(LOOP_LIMIT);
+        DEBUG_PRINT("Loop "); DEBUG_PRINT(loop_counter); DEBUG_PRINT(" of ");
+        DEBUG_PRINTLN(LOOP_LIMIT);
         if (display_data) {
             oled.show_page(oled.page);
             delay(5900);
             loop_counter++;
             if (loop_counter > LOOP_LIMIT) {
-                Serial.println("Display work is exhausting. Tired now. Going to sleep. ZZZzzz...");
+                DEBUG_PRINTLN("Display work is exhausting. Tired now. Going to sleep. ZZZzzz...");
                 monitor_deep_sleep();
             }
         } else if (publish_status != 0) {  // At least one item was published.
             delay(100);
-            Serial.print("Publish status battery: ");
-            Serial.println(publish_status[0]);
-            Serial.print("Publish status current: ");
-            Serial.println(publish_status[1]);
-            Serial.print("Publish status humidity: ");
-            Serial.println(publish_status[2]);
-            Serial.print("Publish status temperature: ");
-            Serial.println(publish_status[3]);
-            Serial.print("Publish status time: ");
-            Serial.println(publish_status[4]);
-            Serial.println("No display work. Going back to sleep. ZZZzzz...");
+            DEBUG_PRINT("Publish status battery: ");
+            DEBUG_PRINTLN(publish_status[0]);
+            DEBUG_PRINT("Publish status current: ");
+            DEBUG_PRINTLN(publish_status[1]);
+            DEBUG_PRINT("Publish status humidity: ");
+            DEBUG_PRINTLN(publish_status[2]);
+            DEBUG_PRINT("Publish status temperature: ");
+            DEBUG_PRINTLN(publish_status[3]);
+            DEBUG_PRINT("Publish status time: ");
+            DEBUG_PRINTLN(publish_status[4]);
+            DEBUG_PRINTLN("No display work. Going back to sleep. ZZZzzz...");
             monitor_deep_sleep();
         }
     } else {
         uint8_t mac_address;
         WiFi.macAddress(&mac_address);
-        Serial.println("WiFi is not connected.");
-        Serial.print("MAC Address: ");
-        Serial.println(mac_address);
+        DEBUG_PRINTLN("WiFi is not connected.");
+        DEBUG_PRINT("MAC Address: "); DEBUG_PRINTLN(macv4_int_to_str(mac_address));
         wifi_connection_attempts++;
-        Serial.print("Connection attempt #");
-        Serial.print(wifi_connection_attempts);
-        Serial.println(" failed.");
+        DEBUG_PRINT("Connection attempt #");
+        DEBUG_PRINT(wifi_connection_attempts);
+        DEBUG_PRINTLN(" failed.");
         if (wifi_connection_attempts == 10) {
             monitor_deep_sleep();
         }
@@ -255,13 +250,12 @@ void monitor_deep_sleep() {
     if (mqtt.connected()) {
         mqtt.disconnect();
     }
-    mqtt_connect_status = -1;
     client.stop();
     WiFi.end();
     
     auto alarm_time = time_util.unix_epoch_time_gmt + SLEEP_INTERVAL_SECONDS;
-    Serial.print("RTC Epoch: "); Serial.println(rtc.getEpoch());
-    Serial.print("RTC Alarm: "); Serial.println(alarm_time);
+    DEBUG_PRINT("RTC Epoch: "); DEBUG_PRINTLN(rtc.getEpoch());
+    DEBUG_PRINT("RTC Alarm: "); DEBUG_PRINTLN(alarm_time);
     rtc.setAlarmEpoch((uint32) alarm_time);
     rtc.enableAlarm(rtc.MATCH_HHMMSS);
     rtc.standbyMode();

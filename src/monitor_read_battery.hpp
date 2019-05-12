@@ -30,6 +30,7 @@
 #undef max  // @ToDo remove when library? bug fixed.
 #include <array>
 #include <algorithm>
+#include "serial_debug_error.hpp"
 
 int get_battery_vdc();
 
