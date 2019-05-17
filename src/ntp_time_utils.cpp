@@ -66,7 +66,7 @@ void ntp_time_utils::set_dst_usa(tm *time_o, time_t *time_stamp) {
 /*
  * Set time using time from ATWINC1500 on the Feather M0.
  */
-void ntp_time_utils::set_time_of_day() {
+bool ntp_time_utils::set_time_of_day() {
     if (not system_time_set) {
         int attempts{0};
         while(unix_epoch_time_gmt == 0 and attempts <= 3) {
@@ -83,6 +83,7 @@ void ntp_time_utils::set_time_of_day() {
     }
     set_sensor_time(unix_epoch_time_gmt);
     system_time_set = true;
+    return system_time_set;
 }
 
 /*

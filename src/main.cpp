@@ -149,7 +149,10 @@ void loop() {
     DEBUG_PRINT("WiFi Connected. IP: "); DEBUG_PRINTLN(ipv4_int_to_str(WiFi.localIP()));
 
     // Correct time is required to decrypt SSL certificate.
-    time_util.set_time_of_day();
+    if (not time_util.set_time_of_day()) {
+        DEBUG_PRINTLN("NTP failure. Can't set system time-of-day.");
+        return;
+    }
     DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(time_util.unix_epoch_time_gmt);
     DEBUG_PRINT("Sensor Time: "); DEBUG_PRINTLN(sensor.unix_epoch_time);
 
@@ -234,7 +237,6 @@ void loop() {
         DEBUG_PRINT("Publish status time: ");
         DEBUG_PRINTLN(publish_status[4]);
     }
-
 }
 
 void alarm_handler() {

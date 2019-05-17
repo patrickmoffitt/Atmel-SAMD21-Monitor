@@ -38,7 +38,7 @@
 
 
 struct ntp_time_utils {
-    void set_time_of_day();
+    bool set_time_of_day();
     void set_sensor_time(time_t unix_epoch_time_gmt);
     volatile time_t unix_epoch_time_gmt;
     static const std::map<int, std::pair<int, int>> dst_dates;
