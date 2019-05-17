@@ -44,6 +44,9 @@
 // Float format helper.
 using format = float_to_fixed_width;
 
+// Declared in WiFi101.h
+extern WiFiClass WiFi;
+
 // struct to hold sensor measurements.
 monitor_data sensor;
 

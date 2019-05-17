@@ -40,7 +40,7 @@
 struct ntp_time_utils {
     bool set_time_of_day();
     void set_sensor_time(time_t unix_epoch_time_gmt);
-    volatile time_t unix_epoch_time_gmt;
+    volatile time_t unix_epoch_time_gmt{0};
     static const std::map<int, std::pair<int, int>> dst_dates;
     void set_dst_usa(tm *time_o, time_t *time_stamp);
     char EASTERN_TIMEZONE_ABBREV[5] = {' ', 'E', 'S', 'T', '\0'};

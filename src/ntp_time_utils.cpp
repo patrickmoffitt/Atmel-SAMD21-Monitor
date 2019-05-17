@@ -24,7 +24,8 @@
 
 extern bool system_time_set;
 extern RTCZero rtc;
-
+// Declared in WiFi101.h
+extern WiFiClass WiFi;
 
 /*
  * DST starts in March and ends in November.
@@ -74,15 +75,14 @@ bool ntp_time_utils::set_time_of_day() {
             delay(1000);
             attempts++;
         }
-
         if (unix_epoch_time_gmt != 0) {
             rtc.setEpoch(unix_epoch_time_gmt);
+            system_time_set = true;
         }
     } else {
         unix_epoch_time_gmt = rtc.getEpoch();
     }
     set_sensor_time(unix_epoch_time_gmt);
-    system_time_set = true;
     return system_time_set;
 }
 
