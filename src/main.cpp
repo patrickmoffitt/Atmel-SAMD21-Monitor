@@ -134,7 +134,7 @@ void loop() {
         monitor_deep_sleep();
     }
 
-    if (publish_status.any() and not display_data) {
+    if (publish_status.any() and display_data == false) {
         monitor_deep_sleep();
     }
 
@@ -157,6 +157,10 @@ void loop() {
         }
     }
     DEBUG_PRINT("MQTT Connection Status: "); DEBUG_PRINTLN(mqtt.connected());
+
+    time_util.set_time_of_day();
+    DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(time_util.unix_epoch_time_gmt);
+    DEBUG_PRINT("Sensor Time: "); DEBUG_PRINTLN(sensor.unix_epoch_time);
 
     sensor.battery_vdc = get_battery_percent();
     sensor.current_ma = ina219.getCurrent_mA();
@@ -242,6 +246,8 @@ void monitor_deep_sleep() {
     oled.disable();
     display_data = false;
     oled.page = 0;
+    loop_counter = 0;
+    publish_status.reset();
     if (mqtt.connected()) {
         mqtt.disconnect();
     }
