@@ -148,6 +148,11 @@ void loop() {
     }
     DEBUG_PRINT("WiFi Connected. IP: "); DEBUG_PRINTLN(ipv4_int_to_str(WiFi.localIP()));
 
+    // Correct time is required to decrypt SSL certificate.
+    time_util.set_time_of_day();
+    DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(time_util.unix_epoch_time_gmt);
+    DEBUG_PRINT("Sensor Time: "); DEBUG_PRINTLN(sensor.unix_epoch_time);
+
     if (not mqtt.connected()) {
         mqtt.connect();
         delay(500 * loop_counter);
@@ -157,10 +162,6 @@ void loop() {
         }
     }
     DEBUG_PRINT("MQTT Connection Status: "); DEBUG_PRINTLN(mqtt.connected());
-
-    time_util.set_time_of_day();
-    DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(time_util.unix_epoch_time_gmt);
-    DEBUG_PRINT("Sensor Time: "); DEBUG_PRINTLN(sensor.unix_epoch_time);
 
     sensor.battery_vdc = get_battery_percent();
     sensor.current_ma = ina219.getCurrent_mA();
