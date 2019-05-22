@@ -26,9 +26,11 @@
 #include <cstdint>
 #include <sstream>
 #include <iomanip>
+#include <map>
 #include <Arduino.h>
 
 String ipv4_int_to_str(const uint32_t ip);
 String macv4_int_to_str(const uint8_t *mac);
+const char* wifi_state(const uint8_t key);
 
 #endif //WIFI101_HELPER_HPP
