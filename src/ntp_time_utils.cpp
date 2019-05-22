@@ -66,16 +66,14 @@ void ntp_time_utils::set_dst_usa(tm *time_o, time_t *time_stamp) {
 
 /*
  * Set time using time from ATWINC1500 on the Feather M0.
+ * Fallback to whatever time is on the RTC.
  */
 bool ntp_time_utils::set_time_of_day() {
-    if (not system_time_set) {
-        int attempts{0};
-        while(unix_epoch_time_gmt == 0 and attempts <= 3) {
-            unix_epoch_time_gmt = WiFi.getTime();
-            delay(1000);
-            attempts++;
-        }
-        if (unix_epoch_time_gmt != 0) {
+    uint32_t time{0};
+    if (not system_time_set and WiFi.status() == WL_CONNECTED) {
+        time = WiFi.getTime();
+        if (time != 0) {
+            unix_epoch_time_gmt = time;
             rtc.setEpoch(unix_epoch_time_gmt);
             system_time_set = true;
         }
@@ -93,15 +91,15 @@ void ntp_time_utils::set_sensor_time(time_t unix_epoch_time_gmt){
     extern monitor_data sensor;
     time_t now = unix_epoch_time_gmt;
     now += (GMT_OFFSET * 3600);
-    struct tm time_info;
+    tm time_info{};
     gmtime_r(&now, &time_info);
     set_dst_usa(&time_info, &now);
     now += dst_offset_seconds;
     std::strftime(
-            sensor.unix_epoch_time,
-            sizeof(sensor.unix_epoch_time),
-            "%c",
-            std::gmtime(&now)
+                  sensor.unix_epoch_time,
+                  sizeof(sensor.unix_epoch_time),
+                  "%c",
+                  std::gmtime(&now)
     );
     strcat(&sensor.unix_epoch_time[sizeof(sensor.unix_epoch_time) -
                                    sizeof(EASTERN_TIMEZONE_ABBREV)],
