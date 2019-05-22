@@ -26,6 +26,8 @@
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
 
+#define AIO_MQTT_QOS ((uint8_t)1)
+
 // Store the MQTT server, username, and password in flash memory.
 // This is required for using the Adafruit MQTT library.
 static const char MQTT_SERVER[]   = AIO_SERVER;
