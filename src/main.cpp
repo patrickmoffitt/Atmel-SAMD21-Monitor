@@ -20,11 +20,11 @@
     SOFTWARE.
  */
 
+
 #include <bitset>
 #include <cmath>
 #include <locale>
 #include <Arduino.h>
-#include "../lib/WiFi101/src/WiFi101.h"
 #include "monitor_data.hpp"
 #include "ntp_time_utils.hpp"
 #include "ADAFRUIT_IO_MQTT.hpp"
@@ -34,11 +34,11 @@
 #include "monitor_read_battery.hpp"
 #include "wifi101_helper.hpp"
 #include "float_to_fixed_width.hpp"
-#include "serial_debug_error.hpp"
 #include <RTCZero.h>
+#include "../lib/WiFi101/src/WiFi101.h"
+#include "serial_debug_error.hpp"
 
-#define LOOP_LIMIT 4
-
+#define LOOP_LIMIT 5
 #define SLEEP_INTERVAL_SECONDS 900
 
 // Float format helper.
@@ -71,6 +71,7 @@ monitor_display oled;
 
 // Temperature and Humidity Utilities
 DHT_Unified dht(DHTPIN, DHTTYPE);
+sensors_event_t event;
 
 // Current Sensor Utilities
 Adafruit_INA219 ina219;
@@ -78,17 +79,23 @@ Adafruit_INA219 ina219;
 volatile bool display_data{false};  // Button A toggles the display
 volatile bool degrees_c_f{false};   // Button C toggles the temperature scale.
 volatile bool system_time_set{false};
+
 volatile int loop_counter{0};
-std::bitset<5> publish_status{0};
 
-void alarm_handler();  // Advance declaration
+std::bitset<MONITOR_DATA_SIZE> publish_status{0};
+// Float max 39 digits and minus sign.
+char payload_float[AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE];
+char zero{'\0'};
+
+void alarm_handler();       // Advance declaration
 volatile bool alarm_set{false};
+void monitor_deep_sleep();  // Advance declaration.
 
-void monitor_deep_sleep();  //  Advance declaration.
 
 void setup() {
 #if defined(SERIAL_DEBUG) || defined(SERIAL_ERROR)
     Serial.begin(115200);
+    delay(3000);
 #endif
     rtc.begin();
     rtc.attachInterrupt(alarm_handler);
@@ -118,6 +125,7 @@ void setup() {
     WiFi.setPins(8, 7, 4, 2);
     WiFi.maxLowPowerMode();
     WiFi.begin(WIFI_SSID, WIFI_PASS);
+    delay(1500);
 }
 
 void loop() {
@@ -128,12 +136,13 @@ void loop() {
     if (alarm_set == true) {
         alarm_set = false;
         oled.enable();
-        WiFi.begin(WIFI_SSID, WIFI_PASS);
-        delay(500);
-        return;
+        if (WiFi.status() == WL_IDLE_STATUS) {
+            WiFi.begin(WIFI_SSID, WIFI_PASS);
+            delay(1500);
+        }
     }
 
-    if (loop_counter == LOOP_LIMIT) {
+    if (loop_counter >= LOOP_LIMIT) {
         monitor_deep_sleep();
     }
 
@@ -177,7 +186,6 @@ void loop() {
     }
     DEBUG_PRINT("Current : "); DEBUG_PRINT(sensor.current_ma); DEBUG_PRINTLN("mA");
 
-    sensors_event_t event;
     dht.temperature().getEvent(&event);
     if (std::isnan(event.temperature)) {
         DEBUG_PRINTLN("Error reading temperature!");
@@ -199,33 +207,36 @@ void loop() {
         delay(5000);
     }
 
-    char payload_float[AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE];  // Float max 39 digits and minus sign.
-    char zero{'\0'};
-
     if (mqtt.connected()) {
+        // mqtt.publish result is always 1 unless QoS > 0;
         // Publish Battery VDC Percent
         format::to_fixed_width(sensor.battery_vdc, ZERO_FIELD_PAD, payload_float);
-        publish_status[0] = mqtt.publish(BATTERY_VDC, payload_float, 0);
+        publish_status[0] = mqtt.publish(BATTERY_VDC, payload_float, AIO_MQTT_QOS);
+        delay(100);
         memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
         // Publish Current mA
         format::to_fixed_width(sensor.current_ma, ZERO_FIELD_PAD, AIO_FLOAT_PRECISION, payload_float);
-        publish_status[1] = mqtt.publish(CURRENT_MA, payload_float, 0);
+        publish_status[1] = mqtt.publish(CURRENT_MA, payload_float, AIO_MQTT_QOS);
+        delay(100);
         memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
         // Publish Humidity ϕ
         format::to_fixed_width(sensor.humidity_rh, ZERO_FIELD_PAD, AIO_FLOAT_PRECISION, payload_float);
-        publish_status[2] = mqtt.publish(HUMIDITY_RH, payload_float, 0);
+        publish_status[2] = mqtt.publish(HUMIDITY_RH, payload_float, AIO_MQTT_QOS);
+        delay(100);
         memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
         // Publish Temperature ℉
         format::to_fixed_width(sensor.temperature_f, ZERO_FIELD_PAD, AIO_FLOAT_PRECISION, payload_float);
-        publish_status[3] = mqtt.publish(TEMPERATURE_F, payload_float, 0);
+        publish_status[3] = mqtt.publish(TEMPERATURE_F, payload_float, AIO_MQTT_QOS);
+        delay(100);
         memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
 
         // Publish Unix Epoch Time UTC
-        publish_status[4] = mqtt.publish(UNIX_EPOCH_TIME, sensor.unix_epoch_time, 0);
+        publish_status[4] = mqtt.publish(UNIX_EPOCH_TIME, sensor.unix_epoch_time, AIO_MQTT_QOS);
         delay(100);
+        memcpy(&payload_float, &zero, AIO_MQTT_PAYLOAD_FLOAT_MAX_SIZE);
     }
 
     if (publish_status.any()) {  // At least one item was published.
@@ -253,11 +264,12 @@ void monitor_deep_sleep() {
     display_data = false;
     oled.page = 0;
     loop_counter = 0;
+
     publish_status.reset();
     if (mqtt.connected()) {
-        mqtt.disconnect();
+        mqtt.disconnect();  // Calls client.stop().
+        delay(100);
     }
-    client.stop();
     WiFi.end();
 
     auto epoch = rtc.getEpoch();
@@ -270,4 +282,6 @@ void monitor_deep_sleep() {
     rtc.setAlarmEpoch((uint32) alarm_time);
     rtc.enableAlarm(rtc.MATCH_HHMMSS);
     rtc.standbyMode();
+    delay(1000);  // Yield to sleep.
+
 }
