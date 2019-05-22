@@ -23,9 +23,11 @@
 #ifndef MONITOR_MONITOR_DATA_HPP
 #define MONITOR_MONITOR_DATA_HPP
 
+#define MONITOR_DATA_SIZE 5
+
 struct monitor_data {
     int battery_vdc;
-    double current_ma;
+    float current_ma;
     double humidity_rh;
     double temperature_f;
     char unix_epoch_time[29]; // Wed Dec 28 11:44:28 2011 GMT
