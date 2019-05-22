@@ -47,3 +47,22 @@ String macv4_int_to_str(const uint8_t *mac) {
     str_buf << std::ends;
     return String(str_buf.str().c_str());
 }
+
+const char *wifi_state(const uint8_t key) {
+    std::map<uint8_t, const char*> wifi_status = {
+            {255, "WL_NO_SHIELD"},
+            {0, "WL_IDLE_STATUS"},
+            {1, "WL_NO_SSID_AVAIL"},
+            {2, "WL_SCAN_COMPLETED"},
+            {3, "WL_CONNECTED"},
+            {4, "WL_CONNECT_FAILED"},
+            {5, "WL_CONNECTION_LOST"},
+            {6, "WL_DISCONNECTED"},
+            {7, "WL_AP_LISTENING"},
+            {8, "WL_AP_CONNECTED"},
+            {9, "WL_AP_FAILED"},
+            {10, "WL_PROVISIONING"},
+            {11, "WL_PROVISIONING_FAILED"}
+    };
+    return wifi_status[key];
+}
