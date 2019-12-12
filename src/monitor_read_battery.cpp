@@ -20,6 +20,7 @@
     SOFTWARE.
  */
 
+#include <numeric>
 #include "monitor_read_battery.hpp"
 
 float get_battery_vdc() {
@@ -33,7 +34,7 @@ float get_battery_vdc() {
         readings[i] = analogRead(ADC_PIN);
         delay(33);
     }
-    int sum = accumulate(begin(readings), end(readings), 0, std::plus<int>());
+    int sum = std::accumulate(begin(readings), end(readings), 0, std::plus<int>());
     int level = (sum / readings_len);
     DEBUG_PRINT("Raw ADC value: ");
     DEBUG_PRINTLN(level);
