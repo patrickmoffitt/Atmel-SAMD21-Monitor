@@ -44,7 +44,7 @@ struct ntp_time_utils {
     static const std::map<int, std::pair<int, int>> dst_dates;
     void set_dst_usa(tm *time_o, time_t *time_stamp);
     char EASTERN_TIMEZONE_ABBREV[5] = {' ', 'E', 'S', 'T', '\0'};
-    int dst_offset_seconds{0};
+    volatile int dst_offset_seconds{0};
 };
 
 #endif //MAILBOX_NTP_TIME_UTILS_HPP

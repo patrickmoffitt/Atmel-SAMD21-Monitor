@@ -56,7 +56,7 @@ void ntp_time_utils::set_dst_usa(tm *time_o, time_t *time_stamp) {
         double dst_start_hour = ((31 + 28.25 + std::get<0>(dst) - 1) * 24) + 2;
         double dst_end_hour = ((31 + 28.25 + 31 + 30 + 31 + 30 + 31 + 31 +
                                 30 + 31 + std::get<1>(dst) - 1) * 24) + 2;
-        double hours_since_new_year = (*time_stamp - (31557600 * (year - 1970))) / 3600;
+        double hours_since_new_year = (*time_stamp - (31557600 * (year - 1970.0))) / 3600.0;
         if (dst_start_hour < hours_since_new_year and dst_end_hour > hours_since_new_year) {
             memcpy(&EASTERN_TIMEZONE_ABBREV, " EDT", sizeof(EASTERN_TIMEZONE_ABBREV));
             dst_offset_seconds = 3600;
