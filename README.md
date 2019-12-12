@@ -78,24 +78,24 @@ management. You can build you own using this template:
 ; Please visit documentation for the other options and examples
 ; http://docs.platformio.org/page/projectconf.html
 [platformio]
-; MacOS X / Linux
-lib_extra_dirs = ${env.HOME}/Documents/Arduino/libraries
 
 [common]
 lib_deps_external =
+    https://github.com/patrickmoffitt/Adafruit-MQT-Library-Large-Sub.git
     https://github.com/adafruit/Adafruit-GFX-Library/archive/master.zip
     https://github.com/adafruit/Adafruit_FeatherOLED/archive/master.zip
     https://github.com/adafruit/Adafruit_SSD1306/archive/master.zip
     https://github.com/adafruit/Adafruit_Sensor/archive/master.zip
     https://github.com/adafruit/DHT-sensor-library/archive/master.zip
     https://github.com/adafruit/Adafruit_INA219/archive/master.zip
+    https://github.com/arduino-libraries/RTCZero.git
 
-[env:huzzah]
+[env:adafruit_feather_m0]
 platform = atmelsam
-framework = arduino
 board = adafruit_feather_m0
+framework = arduino
 upload_port = /full/path/to/your/USB-TTL-DEVICE
-upload_speed = 115200
+upload_speed = 921699
 lib_deps =
     ${common.lib_deps_external}
 build_flags =
