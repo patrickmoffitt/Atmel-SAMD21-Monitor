@@ -165,7 +165,8 @@ void loop() {
         DEBUG_PRINTLN("NTP failure. Can't set system time-of-day.");
         return;
     }
-    DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(time_util.unix_epoch_time_gmt);
+    auto now = printf("%lld", time_util.unix_epoch_time_gmt);
+    DEBUG_PRINT("NTP: "); DEBUG_PRINTLN(now);
     DEBUG_PRINT("Sensor Time: "); DEBUG_PRINTLN(sensor.unix_epoch_time);
 
     if (not mqtt.connected()) {
